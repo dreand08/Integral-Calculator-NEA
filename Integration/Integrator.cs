@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Computer_Science_NEA.Integration
 {
-    interface Integrator
+    interface DefiniteIntegrator
     {
         //Here we create an interface which acts as a contract for all
         //subsequent integration methods

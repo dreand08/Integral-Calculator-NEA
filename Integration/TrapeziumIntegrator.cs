@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Computer_Science_NEA.Integration
 {
-    class TrapeziumIntegrator : Integrator
+    class TrapeziumIntegrator : DefiniteIntegrator
     {
         //Trapezium method is the simplest numerical method for definite
         //integration and involves splitting a function into many rectangles
@@ -15,6 +15,7 @@ namespace Computer_Science_NEA.Integration
         //under the curve. 
         //Depending on the number of rectangles used and the type of function 
         //there can be some error %.
+        //Formula: A = h/2[y0 + 2(y1 + y2 + ... + y(n-1)) + yn]
 
         //Properties
         public int N { get; set; } //Number of rectangles - higher = more accurate
