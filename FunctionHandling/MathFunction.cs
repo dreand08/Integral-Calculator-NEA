@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using Mathos.Parser; //A Library used for parsing string into math.
@@ -56,7 +57,74 @@ namespace Computer_Science_NEA.FunctionHandling
             Parser.LocalFunctions.Add("sinh", args => Math.Sinh(args[0]));
             Parser.LocalFunctions.Add("cosh", args => Math.Cosh(args[0]));
             Parser.LocalFunctions.Add("tanh", args => Math.Tanh(args[0]));
-            Parser.LocalFunctions.Add("arcsin", args => Math.Asin(args[0]));
+            Parser.LocalFunctions.Add("arcsin", args =>
+            {
+                if (args[0] > 1 || args[0] < -1)
+                {
+                    throw new ArgumentException("Arcsin only takes -1<x<1");
+                }
+                return Math.Asin(args[0]);
+            });
+            Parser.LocalFunctions.Add("arcos", args =>
+            {
+                if (args[0] > 1 || args[0] < -1)
+                {
+                    throw new ArgumentException("Arcos only takes -1<x<1");
+                }
+                return Math.Acos(args[0]);
+            });
+            Parser.LocalFunctions.Add("arctan", args => Math.Atan(args[0]));
+            Parser.LocalFunctions.Add("arcsinh", args => Math.Log(args[0] + Math.Sqrt(Math.Pow(args[0],2) + 1)));
+            Parser.LocalFunctions.Add("arcosh", args => // Arcosh, Arcsinh, Arctanh aren't defined in Math library so must be implemented manually.
+            {
+                if (args[0] < 1)
+                {
+                    throw new ArgumentException("Arcosh only takes x >= 1");
+                }
+                return Math.Log(args[0] + Math.Sqrt(Math.Pow(args[0], 2) - 1));
+            });
+            Parser.LocalFunctions.Add("arctanh", args =>
+            {
+                if (args[0] <= -1 || args[0] >= 1)
+                {
+                    throw new ArgumentException("Arctanh only takes -1<x<1");
+                }
+                return 0.5 * Math.Log((1 + args[0]) / (1 - args[0]));
+            });
+            Parser.LocalFunctions.Add("sec", args =>
+            {
+                if (args[0] == 0)
+                {
+                    throw new ArgumentException("Sec cannot take x = 0");
+                }
+                return 1 / Math.Cos(args[0]);
+            });
+            Parser.LocalFunctions.Add("cosec", args =>
+            {
+                if (args[0] == 0)
+                {
+                    throw new ArgumentException("Cosec cannot take x = 0");
+                }
+                return 1 / Math.Sin(args[0]);
+            });
+            Parser.LocalFunctions.Add("cot", args =>
+            {
+                if (args[0] == 0)
+                {
+                    throw new ArgumentException("Cot cannot take x = 0");
+                }
+                return 1 / Math.Tan(args[0]);
+            });
+            Parser.LocalFunctions.Add("floor", args => Math.Floor(args[0]));
+            Parser.LocalFunctions.Add("ceil", args => Math.Ceiling(args[0]));
+            Parser.LocalFunctions.Add("round", args => Math.Round(args[0]));
+            Parser.LocalFunctions.Add("floor", args => Math.Floor(args[0]));
+            Parser.LocalFunctions.Add("sign", args => Math.Sign(args[0])); // Returns sign of argument
+            Parser.LocalFunctions.Add("floor", args => Math.Floor(args[0]));
+            Parser.LocalFunctions.Add("min", args => Math.Min(args[0], args[1]));
+            Parser.LocalFunctions.Add("max", args => Math.Max(args[0], args[1]));
+            Parser.LocalFunctions.Add("pow", args => Math.Pow(args[0], args[1]));
+
         }
     }
 }
