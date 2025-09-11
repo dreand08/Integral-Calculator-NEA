@@ -15,13 +15,24 @@ namespace Computer_Science_NEA.FunctionHandling
         public string Expression { get; private set; }
         public MathParser Parser { get; private set; }
 
+        //Methods
+        public double Evaluate(Dictionary<string, double> variables)
+        {
+            Parser.LocalVariables.Clear(); //Clears old variables
+
+            foreach (var kvp in variables)//Iterates through each key-value pair in the dictionary.
+            {
+                Parser.LocalVariables[kvp.Key] = kvp.Value;
+            }
+            return Parser.Parse(Expression.ToLower());
+        }
         //Constructor
         public MathFunction(string expression)
         {
             Expression = expression;
             Parser = new MathParser();
-
             //We must add mappings since MathParser only knows basic arithmetic functions.
+            //In practice we are teaching the parser what all these different functions mean.
             //Custom Mappings
             Parser.LocalFunctions.Add("ln", args =>
             {
@@ -74,7 +85,7 @@ namespace Computer_Science_NEA.FunctionHandling
                 return Math.Acos(args[0]);
             });
             Parser.LocalFunctions.Add("arctan", args => Math.Atan(args[0]));
-            Parser.LocalFunctions.Add("arcsinh", args => Math.Log(args[0] + Math.Sqrt(Math.Pow(args[0],2) + 1)));
+            Parser.LocalFunctions.Add("arcsinh", args => Math.Log(args[0] + Math.Sqrt(Math.Pow(args[0], 2) + 1)));
             Parser.LocalFunctions.Add("arcosh", args => // Arcosh, Arcsinh, Arctanh aren't defined in Math library so must be implemented manually.
             {
                 if (args[0] < 1)
@@ -118,13 +129,25 @@ namespace Computer_Science_NEA.FunctionHandling
             Parser.LocalFunctions.Add("floor", args => Math.Floor(args[0]));
             Parser.LocalFunctions.Add("ceil", args => Math.Ceiling(args[0]));
             Parser.LocalFunctions.Add("round", args => Math.Round(args[0]));
-            Parser.LocalFunctions.Add("floor", args => Math.Floor(args[0]));
             Parser.LocalFunctions.Add("sign", args => Math.Sign(args[0])); // Returns sign of argument
-            Parser.LocalFunctions.Add("floor", args => Math.Floor(args[0]));
-            Parser.LocalFunctions.Add("min", args => Math.Min(args[0], args[1]));
-            Parser.LocalFunctions.Add("max", args => Math.Max(args[0], args[1]));
-            Parser.LocalFunctions.Add("pow", args => Math.Pow(args[0], args[1]));
-
+            Parser.LocalFunctions.Add("min", args => args.Min()); // This allows for 1 or more values in the min/max functions.
+            Parser.LocalFunctions.Add("max", args => args.Max());
+            Parser.LocalFunctions.Add("pow", args =>
+            {
+                if (args.Length != 2)
+                {
+                    throw new ArgumentException("Please input a value and its power in the form pow(x,y)");
+                }
+                return Math.Pow(args[0], args[1]);
+            });
+            Parser.LocalFunctions.Add("arctan2", args =>
+            {
+                if (args.Length != 2)
+                {
+                    throw new ArgumentException("Please input an x and y value for finding the arctan of x/y measured from x-axis.");
+                }
+                return Math.Atan2(args[0], args[1]);
+            });
         }
     }
 }
