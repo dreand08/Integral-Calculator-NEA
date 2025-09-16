@@ -11,12 +11,11 @@ namespace Computer_Science_NEA.FunctionHandling
     class MathFunction
     {
         //Properties 
-        //Read-Only
-        public string Expression { get; private set; }
-        public MathParser Parser { get; private set; }
+        public string Expression { get; set; }
+        public MathParser Parser { get; set; }
 
         //Methods
-        public double Evaluate(Dictionary<string, double> variables)
+        public double Evaluate(Dictionary<string, double> variables) // Acts as a calculator, i.e. what is f(x) when x = 3, useful for definite integration.
         {
             Parser.LocalVariables.Clear(); //Clears old variables
 
