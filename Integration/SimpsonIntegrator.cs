@@ -16,7 +16,7 @@ namespace Computer_Science_NEA.Integration
         //Formula: A = h/3[y0 + 4(y1 + y3 + ... + y(n-1)) + 2(y2 + y4 + ... + y(n-2)) + yn]
         public double Integrate()
         {
-
+            throw new NotImplementedException();
         }
     }
 }

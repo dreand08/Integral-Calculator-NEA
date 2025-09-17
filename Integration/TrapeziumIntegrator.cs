@@ -24,7 +24,7 @@ namespace Computer_Science_NEA.Integration
 
         public double Integrate()
         {
-
+            throw new NotImplementedException();
         }
     }
 }
