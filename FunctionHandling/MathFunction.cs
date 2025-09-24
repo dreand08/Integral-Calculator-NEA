@@ -226,9 +226,9 @@ namespace Computer_Science_NEA.FunctionHandling
                     return Math.Pow(args[0], args[1]);
                 });
             }
-            if (!parser.LocalFunctions.ContainsKey("arctan2"))
+            if (!parser.LocalFunctions.ContainsKey("arctantwo"))
             {
-                parser.LocalFunctions.Add("arctan2", args =>
+                parser.LocalFunctions.Add("arctantwo", args =>
                 {
                     if (args.Length != 2)
                     {
