@@ -38,17 +38,18 @@ namespace Computer_Science_NEA.FunctionHandling
         private static void AddCustomMappings(MathParser parser)
         {
             //Custom Mappings
-            if (!parser.LocalFunctions.ContainsKey("ln")) // A safety precaution to ensure we aren't adding the same mapping more than once.
+            if (parser.LocalFunctions.ContainsKey("ln"))
             {
-                parser.LocalFunctions.Add("ln", args =>
-                {
-                    if (args[0] <= 0) // Args is a list of arguments pssed into the function. args[0] is just the first value in this double array.
-                    {
-                        throw new ArgumentException("ln(x) only takes x > 0");
-                    }
-                    return Math.Log(args[0]);
-                });
+                parser.LocalFunctions.Remove("ln");
             }
+            parser.LocalFunctions.Add("ln", args =>
+            {
+                if (args[0] <= 0) // Args is a list of arguments pssed into the function. args[0] is just the first value in this double array.
+                {
+                    throw new ArgumentException("ln(x) only takes x > 0");
+                }
+                return Math.Log(args[0]);
+            });
             // Here we added ln, and threw an exception for invalid inputs. 
             //Now we just have to repeat for all functions.
             //List of possible inputs: sin, cos, tan, arctan, arcsin, arcos, sinh, cosh, tanh, arcsinh, arcosh, artanh, e, ln, log10, sqrt, abs, 
@@ -64,32 +65,34 @@ namespace Computer_Science_NEA.FunctionHandling
             {
                 parser.LocalFunctions.Add("tan", args => Math.Tan(args[0]));
             }
-            if (!parser.LocalFunctions.ContainsKey("log"))
+            if (parser.LocalFunctions.ContainsKey("log"))
             {
-                parser.LocalFunctions.Add("log", args =>
-                {
-                    if (args[0] <= 0)
-                    {
-                        throw new ArgumentException("log10(x) only takes x > 0");
-                    }
-                    return Math.Log10(args[0]);
-                });
+                parser.LocalFunctions.Remove("log");
             }
+            parser.LocalFunctions.Add("log", args =>
+            {
+                if (args[0] <= 0)
+                {
+                    throw new ArgumentException("log10(x) only takes x > 0");
+                }
+                return Math.Log10(args[0]);
+            });
             if (!parser.LocalFunctions.ContainsKey("abs"))
             {
                 parser.LocalFunctions.Add("abs", args => Math.Abs(args[0]));
             }
-            if (!parser.LocalFunctions.ContainsKey("sqrt"))
+            if (parser.LocalFunctions.ContainsKey("sqrt"))
             {
-                parser.LocalFunctions.Add("sqrt", args =>
-                {
-                    if (args[0] < 0)
-                    {
-                        throw new ArgumentException("Sqrt only takes x >= 0");
-                    }
-                    return Math.Sqrt(args[0]);
-                });
+                parser.LocalFunctions.Remove("sqrt");
             }
+            parser.LocalFunctions.Add("sqrt", args =>
+            {
+                if (args[0] < 0)
+                {
+                    throw new ArgumentException("Sqrt only takes x >= 0");
+                }
+                return Math.Sqrt(args[0]);
+            });
             if (!parser.LocalFunctions.ContainsKey("exp"))
             {
                 parser.LocalFunctions.Add("exp", args => Math.Exp(args[0]));
@@ -106,17 +109,18 @@ namespace Computer_Science_NEA.FunctionHandling
             {
                 parser.LocalFunctions.Add("tanh", args => Math.Tanh(args[0]));
             }
-            if (!parser.LocalFunctions.ContainsKey("arcsin"))
+            if (parser.LocalFunctions.ContainsKey("arcsin"))
             {
-                parser.LocalFunctions.Add("arcsin", args =>
-                {
-                    if (args[0] > 1 || args[0] < -1)
-                    {
-                        throw new ArgumentException("Arcsin only takes -1<x<1");
-                    }
-                    return Math.Asin(args[0]);
-                });
+                parser.LocalFunctions.Remove("arcsin");
             }
+            parser.LocalFunctions.Add("arcsin", args =>
+            {
+                if (args[0] > 1 || args[0] < -1)
+                {
+                    throw new ArgumentException("Arcsin only takes -1<x<1");
+                }
+                return Math.Asin(args[0]);
+            });
             if (!parser.LocalFunctions.ContainsKey("arcos"))
             {
                 parser.LocalFunctions.Add("arcos", args =>
@@ -162,7 +166,7 @@ namespace Computer_Science_NEA.FunctionHandling
             {
                 parser.LocalFunctions.Add("sec", args =>
                 {
-                    if (Math.Cos(args[0]) == 0)
+                    if (Math.Cos(args[0]) < 1e-12 && Math.Cos(args[0]) > -1e-12)
                     {
                         throw new ArgumentException("Sec cannot take cosx = 0");
                     }
@@ -215,17 +219,18 @@ namespace Computer_Science_NEA.FunctionHandling
             {
                 parser.LocalFunctions.Add("max", args => args.Max());
             }
-            if (!parser.LocalFunctions.ContainsKey("pow"))
+            if (parser.LocalFunctions.ContainsKey("pow"))
             {
-                parser.LocalFunctions.Add("pow", args =>
-                {
-                    if (args.Length != 2)
-                    {
-                        throw new ArgumentException("Please input a value and its power in the form pow(x,y)");
-                    }
-                    return Math.Pow(args[0], args[1]);
-                });
+                parser.LocalFunctions.Remove("pow");
             }
+            parser.LocalFunctions.Add("pow", args =>
+            {
+                if (args.Length != 2)
+                {
+                    throw new ArgumentException("Please input a value and its power in the form pow(x,y)");
+                }
+                return Math.Pow(args[0], args[1]);
+            });
             if (!parser.LocalFunctions.ContainsKey("arctantwo"))
             {
                 parser.LocalFunctions.Add("arctantwo", args =>
