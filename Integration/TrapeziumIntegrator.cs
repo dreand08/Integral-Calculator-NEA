@@ -18,33 +18,19 @@ namespace Computer_Science_NEA.Integration
         //there can be some error %.
         //Formula: A = h/2[y0 + 2(y1 + y2 + ... + y(n-1)) + yn]
 
-        //Properties
-        public double N { get; set; } //Number of rectangles - higher = more accurate
-        public double LowerBound { get; set; } //Starting Value
-        public double UpperBound { get; set; } //Ending Value
-        public MathFunction Function { get; set; }
-        public string Variable { get; set; }
-
-        public TrapeziumIntegrator(MathFunction function, double lowerbound, double upperbound, int n, string variable)
+        //Constructor
+        public TrapeziumIntegrator(MathFunction function, double lowerbound, double upperbound, int n, string variable) : base(function, lowerbound, upperbound, n, variable)
         {
-            Function = function;
-            LowerBound = lowerbound;
-            UpperBound = upperbound;
-            N = n;
-            Variable = variable;
         }
-        public double Integrate()
+        public override double Integrate()
         {
             double area = 0;
-            double d = (UpperBound - LowerBound) / N;
+            double d = (UpperBound - LowerBound) / N;  //Height of each trapezium
             for (int i = 1; i < N; i++)
             {
                 area = area + Function.Evaluate( new() { { Variable, LowerBound + i * d} });
             }
-            area = area * 2;
-            area = area + Function.Evaluate(new() { { Variable, LowerBound } }) + Function.Evaluate(new() { { Variable, UpperBound } });
-            area = area * d;
-            area = area / 2.0;
+            area = (d / 2.0) * ((area * 2) + Function.Evaluate(new() { { Variable, LowerBound } }) + Function.Evaluate(new() { { Variable, UpperBound } })); // Formula
             return area;
         }
     }
