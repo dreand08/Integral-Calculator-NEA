@@ -8,8 +8,8 @@ namespace Computer_Science_NEA
     {
         static void Main(string[] args)
         {
-            var f = new MathFunction("sin(pow(x,2))");
-            var integral1 = new SimpsonIntegrator(f, 0, 3, 1000, "x");
+            var f = new MathFunction("floor(x)");
+            var integral1 = new SimpsonIntegrator(f, 0, 5, 10000, "x");
             Console.WriteLine(integral1.Integrate());
         }
     }
