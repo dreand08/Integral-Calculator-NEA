@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Computer_Science_NEA.Integration
 {
-    class TrapeziumIntegrator  : DefiniteIntegrator
+    public class TrapeziumIntegrator  : DefiniteIntegrator
     {
         //Trapezium method is the simplest numerical method for definite
         //integration and involves splitting a function into many rectangles

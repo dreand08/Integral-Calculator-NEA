@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Computer_Science_NEA.Integration
 {
-    class SimpsonIntegrator : DefiniteIntegrator
+    public class SimpsonIntegrator : DefiniteIntegrator
     {
         //Simpson rule is more complex than trapezium rule and involves splitting the function
         //into rectangles and approximating the area within each rectangle using a parabola which passes
