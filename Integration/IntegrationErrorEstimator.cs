@@ -45,5 +45,64 @@ namespace Computer_Science_NEA.Integration
         {
             return (Evaluate(x + 2 * h) - 4 * Evaluate(x + h) + 6 * Evaluate(x) - 4 * Evaluate(x - h) + Evaluate(x - 2 * h)) / (Math.Pow(h, 4.0));
         }
+
+        //Max of the derivatives
+        public double MaxAbsSecondDerivative(double step)
+        {
+            double maxValue = 0;
+            for (double x = LowerBound; x <= UpperBound; x += step)
+            {
+                double value = Math.Abs(SecondDerivative(x, step / 10.0)); //Checks the second derivative repeatedly with very small increments
+                if (!double.IsNaN(value) && value > maxValue)
+                {
+                    maxValue = value;
+                }
+            }
+            return maxValue;
+        }
+
+        public double MaxAbsFourthDerivative(double step)
+        {
+            double maxValue = 0;
+            for (double x = LowerBound; x <= UpperBound; x += step)
+            {
+                double value = Math.Abs(FourthDerivative(x, step / 10.0));
+                if (!double.IsNaN(value) && value > maxValue)
+                {
+                    maxValue = value;
+                }
+            }
+            return maxValue;
+        }
+
+        //Error Estimation Formulas
+
+        public double EstimateTrapeziumAbsoluteError()
+        {
+            double h = (UpperBound - LowerBound) / N;
+            double maxSecond = MaxAbsSecondDerivative(h);
+            return ((UpperBound - LowerBound) * h * h / 12.0) * maxSecond;
+        }
+
+        public double EstimateSimpsonAbsoluteError()
+        {
+            double h = (UpperBound - LowerBound) / N;
+            double maxFourth = MaxAbsFourthDerivative(h);
+            return ((UpperBound - LowerBound) * Math.Pow(h, 4) / 180.0) * maxFourth;
+        }
+
+        //Percentage Error
+
+        public double EstimateTrapeziumPercentError(double integralValue)
+        {
+            double absError = EstimateTrapeziumAbsoluteError();
+            return Math.Abs(absError / integralValue) * 100.0;
+        }
+
+        public double EstimateSimpsonPercentError(double integralValue)
+        {
+            double absError = EstimateSimpsonAbsoluteError();
+            return Math.Abs(absError / integralValue) * 100.0;
+        }
     }
 }
