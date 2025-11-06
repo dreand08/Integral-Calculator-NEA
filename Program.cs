@@ -8,20 +8,12 @@ namespace Computer_Science_NEA
     {
         static void Main(string[] args)
         {
-            var f = new MathFunction("exp(arctanh(x)) * (2.0 / x) * arctanh((2 * x) / (1 + 2 * pow(x,2)))");
-            var integral1 = new TrapeziumIntegrator(f, -0.9, 0.9, 200, "x");
-            var integral2 = new SimpsonIntegrator(f, -0.9, 0.9, 200, "x");
+            var f = new MathFunction("(1 + pow(x,2)) / (1 + exp(sin(x)))");
+            var integral = new SimpsonIntegrator(f, -2, 2, 10000, "x");
+            Console.WriteLine(integral.Integrate());
 
-            double result1 = integral1.Integrate();
-            double result2 = integral2.Integrate();
-
-            var estimator = new IntegrationErrorEstimator(f, -0.9, 0.9, 200, "x");
-
-            Console.WriteLine($"Using trapezium integration: {result1}");
-            Console.WriteLine($"The percentage error of the estimation: {estimator.EstimateTrapeziumPercentError(result1)}");
-
-            Console.WriteLine($"Using simpson integration: {result2}");
-            Console.WriteLine($"The percentage error of the estimation: {estimator.EstimateTrapeziumPercentError(result2)}");
+            var estimator = new IntegrationErrorEstimator(f, -2, 2, 10000, "x");
+            Console.WriteLine(estimator.EstimateSimpsonPercentError(integral.Integrate()));
         }
     }
 }
