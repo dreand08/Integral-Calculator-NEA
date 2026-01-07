@@ -84,6 +84,20 @@ namespace Computer_Science_NEA.FunctionHandling.SymbolicMath
             return Make(simplified);
         }
 
-        public override Expression Substitute(Expression target)
+        public override Expression Substitute(Expression target, Expression replacement) //This allows substitution to each term and then rebuilds the expression.
+        {
+            if (Equals(target)) return replacement;
+
+            var substituted = new List<Expression>(Terms.Count);
+            foreach (var t in Terms)
+                substituted.Add(t.Substitute(target, replacement));
+
+            return Make(substituted.ToArray());
+        }
+
+        public override string ToString() //Prints the expression.
+        {
+            return string.Join(" + ", Terms.Select(t => WithParentsIfNeeded(t)));
+        }
     }
 }
