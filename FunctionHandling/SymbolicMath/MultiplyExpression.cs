@@ -37,19 +37,81 @@ namespace Computer_Science_NEA.FunctionHandling.SymbolicMath
         {
             var nonConst = new List<Expression>();
             decimal constProduct = 1m;
-            //Struggling to think through the logic, need to figure out how to fold constants, need to continue tonight.
 
             foreach (var f in rawFactors) // Trying to flatten and split constants from non-constants.
             {
-                
+                if (f is MultiplyExpression mul)
+                {
+                    foreach (var sub in mul.Factors)
+                    {
+                        if (IsNumber(sub))
+                        {
+                            if (IsZero(sub)) return new NumberExpression(0m);
+                            constProduct *= GetNumber(sub);
+                        }
+                        else
+                        {
+                            nonConst.Add(sub);
+                        }
+                    }
+                }
+                else if (IsNumber(f))
+                {
+                    if (IsZero(f)) return new NumberExpression(0m);
+                    constProduct *= GetNumber(f);
+                }
+                else
+                {
+                    nonConst.Add(f);
+                }
             }
 
             //Dropping the *1
             var result = new List<Expression>();
             foreach (var f in nonConst)
             {
-
+                if (!IsOne(f)) result.Add(f);
             }
+
+            // Add constant product back if needed
+            if (constProduct != 1m || result.Count == 0)
+            {
+                result.Add(new NumberExpression(constProduct));
+            }
+
+            //Sort for consistent printing
+            result = result
+                .OrderBy(t => t.GetType().Name)
+                .ThenBy(t => t.ToString())
+                .ToList();
+
+            //If only 1 factor then return it directly
+            if (result.Count == 1)
+                return result[0];
+
+            return new MultiplyExpression(result);
+        }
+
+        public override Expression Simplify()
+        {
+            var simplified = Factors.Select(f => f.Simplify()).ToArray();
+            return Make(simplified);
+        }
+
+        public override Expression Substitute(Expression target, Expression replacement)
+        {
+            if (Equals(target)) return replacement;
+
+            var substituted = new List<Expression>(Factors.Count);
+            foreach (var f in Factors)
+                substituted.Add(f.Substitute(target, replacement));
+
+            return Make(substituted.ToArray());
+        }
+
+        public override string ToString()
+        {
+            return string.Join(" * ", Factors.Select(f => WithParentsIfNeeded(f)));
         }
     }
 }

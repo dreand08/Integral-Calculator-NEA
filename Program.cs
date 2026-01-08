@@ -10,9 +10,11 @@ namespace Computer_Science_NEA
     {
         static void Main(string[] args)
         {
-            var expression = new MathFunction("(1 / Math.Sqrt(1 - Math.Pow(x, 2))) * (Math.Log((Math.Sqrt(1 + x) + 1) / (Math.Sqrt(1 + x) - 1)))");
-            var integral = new TrapeziumIntegrator(expression, 0, 1, 1000, "x");
-            Console.WriteLine(integral.Integrate());
+            var x = new VariableExpression("x");
+            Console.WriteLine(MultiplyExpression.Make(x, new NumberExpression(1)));
+            Console.WriteLine(MultiplyExpression.Make(x, new NumberExpression(0)));
+            Console.WriteLine(MultiplyExpression.Make(x, new NumberExpression(2), new NumberExpression(3)));
+            Console.WriteLine(MultiplyExpression.Make(new NumberExpression(2), AddExpression.Make(x, new NumberExpression(3), new NumberExpression(0)), new NumberExpression(10), AddExpression.Make(x, new NumberExpression(0))));
         }
     }
 }
