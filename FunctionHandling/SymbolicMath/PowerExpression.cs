@@ -38,7 +38,46 @@ namespace Computer_Science_NEA.FunctionHandling.SymbolicMath
 
         public static Expression Make(Expression b, Expression e)
         {
-            if (IsZero(b)) 
+            // x^0 => 1
+            if (IsZero(e)) return new NumberExpression(1m);
+
+            // x^1 => x
+            if (IsOne(e)) return b;
+
+            // 0^x => 0 (ignoring edge cases like 0^0)
+            if (IsZero(b)) return new NumberExpression(0m);
+
+            // 1^x => 1
+            if (IsOne(b)) return new NumberExpression(1m);
+
+            // Constant folding
+            if (IsNumber(b, out var bv) && IsNumber(e, out var ev))
+            {
+                double result = Math.Pow((double)bv, (double)ev);
+                return new NumberExpression((decimal)result);
+            }
+
+            return new PowerExpression(b, e);
+        }
+
+        public override Expression Simplify()
+        {
+            return Make(BaseExpr.Simplify(), Exponent.Simplify());
+        }
+
+        public override Expression Substitute(Expression target, Expression replacement)
+        {
+            if (Equals(target)) return replacement;
+
+            return Make(
+                BaseExpr.Substitute(target, replacement),
+                Exponent.Substitute(target, replacement)
+            );
+        }
+
+        public override string ToString()
+        {
+            return $"{WithParentsIfNeeded(BaseExpr)}^{WithParentsIfNeeded(Exponent)}";
         }
     }
 }
