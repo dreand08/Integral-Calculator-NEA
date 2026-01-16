@@ -28,7 +28,8 @@ namespace Computer_Science_NEA.FunctionHandling.SymbolicMath
             var s = child.ToString();
             return child.Precedence < this.Precedence ? $"({s})" : s;
         }
-
         public override string ToString() => GetType().Name;
+
+        public abstract Expression Differentiate(string variable); //So we can do reverse chain rule.
     }
 }

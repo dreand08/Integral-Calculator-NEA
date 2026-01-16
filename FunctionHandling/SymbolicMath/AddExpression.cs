@@ -99,5 +99,11 @@ namespace Computer_Science_NEA.FunctionHandling.SymbolicMath
         {
             return string.Join(" + ", Terms.Select(t => WithParentsIfNeeded(t)));
         }
+
+        public override Expression Differentiate(string variable)
+        {
+            var dTerms = Terms.Select(t => t.Differentiate(variable)).ToArray();
+            return Make(dTerms).Simplify();
+        }
     }
 }

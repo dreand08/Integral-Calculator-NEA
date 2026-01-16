@@ -31,5 +31,11 @@ namespace Computer_Science_NEA.FunctionHandling.SymbolicMath
             obj is VariableExpression v && v.Name == Name;
 
         public override int GetHashCode() => Name.GetHashCode();
+
+        public override Expression Differentiate(string variable)
+        {
+            return Name == variable ? new NumberExpression(1m) : new NumberExpression(0m);
+        }
+
     }
 }

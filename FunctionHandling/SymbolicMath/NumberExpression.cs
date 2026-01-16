@@ -36,5 +36,10 @@ namespace Computer_Science_NEA.FunctionHandling.SymbolicMath
             obj is NumberExpression n && n.Value == Value;
 
         public override int GetHashCode() => Value.GetHashCode();
+
+        public override Expression Differentiate(string variable)
+        {
+            return new NumberExpression(0m);
+        }
     }
 }

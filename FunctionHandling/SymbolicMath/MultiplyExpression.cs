@@ -113,5 +113,37 @@ namespace Computer_Science_NEA.FunctionHandling.SymbolicMath
         {
             return string.Join(" * ", Factors.Select(f => WithParentsIfNeeded(f)));
         }
+
+        public override Expression Differentiate(string variable)
+        {
+            // If there's only one factor, derivative is just that factor's derivative
+            if (Factors.Count == 1)
+                return Factors[0].Differentiate(variable);
+
+            var sumTerms = new List<Expression>();
+
+            for (int i = 0; i < Factors.Count; i++)
+            {
+                var di = Factors[i].Differentiate(variable);
+
+                // If derivative of this factor is 0, skip this term
+                if (di is NumberExpression n && n.Value == 0m)
+                    continue;
+
+                var termFactors = new List<Expression>(Factors.Count);
+                for (int j = 0; j < Factors.Count; j++)
+                {
+                    termFactors.Add(j == i ? di : Factors[j]);
+                }
+
+                sumTerms.Add(MultiplyExpression.Make(termFactors.ToArray()));
+            }
+
+            // If all terms vanished, derivative is 0
+            if (sumTerms.Count == 0)
+                return new NumberExpression(0m);
+
+            return AddExpression.Make(sumTerms.ToArray()).Simplify();
+        }
     }
 }
