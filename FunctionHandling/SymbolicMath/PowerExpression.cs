@@ -79,5 +79,34 @@ namespace Computer_Science_NEA.FunctionHandling.SymbolicMath
         {
             return $"{WithParentsIfNeeded(BaseExpr)}^{WithParentsIfNeeded(Exponent)}";
         }
+
+        public override Expression Differentiate(string variable)
+        {
+            // Only handle constant numeric exponent for now
+            if (Exponent is NumberExpression n)
+            {
+                var u = BaseExpr;
+                var du = u.Differentiate(variable);
+
+                // If du is 0, whole thing is 0
+                if (du is NumberExpression dn && dn.Value == 0m)
+                    return new NumberExpression(0m);
+
+                // d/dx(u^0) = d/dx(1) = 0 (already simplified by Make, but safe)
+                if (n.Value == 0m) return new NumberExpression(0m);
+
+                // n * u^(n-1) * u'
+                return MultiplyExpression.Make(
+                    new NumberExpression(n.Value),
+                    PowerExpression.Make(u, new NumberExpression(n.Value - 1m)),
+                    du
+                ).Simplify();
+            }
+
+            // Not supported yet (u^v where v isn't constant)
+            // You can either return a special marker or throw.
+            throw new NotSupportedException("Differentiate: non-constant exponent not supported yet.");
+        }
+
     }
 }
