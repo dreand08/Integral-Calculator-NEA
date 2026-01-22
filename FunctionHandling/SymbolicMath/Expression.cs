@@ -31,5 +31,13 @@ namespace Computer_Science_NEA.FunctionHandling.SymbolicMath
         public override string ToString() => GetType().Name;
 
         public abstract Expression Differentiate(string variable); //So we can do reverse chain rule.
+
+        public abstract Expression Integrate(string variable); //The base for symbolic integration.
+        protected bool IsConstantWrt(string variable) //This is useful for integrating variables without respect to them.
+        {
+            var d = Differentiate(variable).Simplify();
+            return d is NumberExpression n && n.Value == 0m;
+        }
+
     }
 }

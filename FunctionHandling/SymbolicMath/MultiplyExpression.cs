@@ -33,6 +33,27 @@ namespace Computer_Science_NEA.FunctionHandling.SymbolicMath
         private static decimal GetNumber(Expression e) =>
             e is NumberExpression n ? n.Value : 1m;
 
+        private static bool TryGetNumericExponent(Expression factor, out Expression baseExpr, out decimal exp)
+        {
+            // x -> base x, exp 1
+            if (factor is VariableExpression || factor is PowerExpression || factor is NumberExpression || factor is AddExpression || factor is MultiplyExpression)
+            {
+                // handled below
+            }
+
+            if (factor is PowerExpression p && p.Exponent is NumberExpression n)
+            {
+                baseExpr = p.BaseExpr;
+                exp = n.Value;
+                return true;
+            }
+
+            // Treat any non-power factor as exponent 1 (e.g. x == x^1)
+            baseExpr = factor;
+            exp = 1m;
+            return true;
+        }
+
         public static Expression Make(params Expression[] rawFactors)
         {
             var nonConst = new List<Expression>();
@@ -78,6 +99,55 @@ namespace Computer_Science_NEA.FunctionHandling.SymbolicMath
             {
                 result.Add(new NumberExpression(constProduct));
             }
+
+            //x^a * x^b => x^(a+b) (only numberic)
+            var combined = new List<Expression>();
+            var exponentMap = new Dictionary<Expression, decimal>();
+
+            foreach (var f in result)
+            {
+                if (f is NumberExpression)
+                {
+                    combined.Add(f);
+                    continue;
+                }
+
+                if (TryGetNumericExponent(f, out var b, out var e))
+                {
+                    // Key point: uses Expression.Equals, so VariableExpression("x") matches itself,
+                    // and structurally equal bases will combine if Equals is implemented for them.
+                    if (exponentMap.ContainsKey(b)) exponentMap[b] += e;
+                    else exponentMap[b] = e;
+                }
+                else
+                {
+                    combined.Add(f);
+                }
+            }
+
+            // Rebuild combined power factors
+            foreach (var kv in exponentMap)
+            {
+                var b = kv.Key;
+                var e = kv.Value;
+
+                if (e == 0m)
+                {
+                    // x^0 => 1
+                    continue;
+                }
+                else if (e == 1m)
+                {
+                    combined.Add(b);
+                }
+                else
+                {
+                    combined.Add(PowerExpression.Make(b, new NumberExpression(e)));
+                }
+            }
+
+            result = combined;
+
 
             //Sort for consistent printing
             result = result
@@ -144,6 +214,40 @@ namespace Computer_Science_NEA.FunctionHandling.SymbolicMath
                 return new NumberExpression(0m);
 
             return AddExpression.Make(sumTerms.ToArray()).Simplify();
+        }
+
+        public override Expression Integrate(string variable)
+        {
+            // If the whole thing is constant: C dx = Cx
+            if (IsConstantWrt(variable))
+                return MultiplyExpression.Make(this, new VariableExpression(variable)).Simplify();
+
+            decimal constProduct = 1m;
+            var nonConst = new List<Expression>();
+
+            foreach (var f in Factors)
+            {
+                if (f is NumberExpression n)
+                    constProduct *= n.Value;
+                else
+                    nonConst.Add(f);
+            }
+
+            // If there were no non-constants, it's just a constant
+            if (nonConst.Count == 0)
+                return MultiplyExpression.Make(new NumberExpression(constProduct), new VariableExpression(variable)).Simplify();
+
+            // Only support pulling out constants times a sinle remaining expression for now
+            if (nonConst.Count == 1)
+            {
+                var innerIntegral = nonConst[0].Integrate(variable);
+
+                if (constProduct == 1m) return innerIntegral.Simplify();
+
+                return MultiplyExpression.Make(new NumberExpression(constProduct), innerIntegral).Simplify();
+            }
+
+            throw new NotSupportedException("Integrate: product of multiple non-constant factors not supported yet.");
         }
     }
 }

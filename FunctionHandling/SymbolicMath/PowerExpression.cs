@@ -49,6 +49,12 @@ namespace Computer_Science_NEA.FunctionHandling.SymbolicMath
 
             // 1^x => 1
             if (IsOne(b)) return new NumberExpression(1m);
+            
+            // (u^a)^b => u^(a*b)
+            if (b is PowerExpression innerPow && IsNumber(innerPow.Exponent, out var a) && IsNumber(e, out var bExp))
+            {
+                return Make(innerPow.BaseExpr, new NumberExpression(a * bExp));
+            }
 
             // Constant folding
             if (IsNumber(b, out var bv) && IsNumber(e, out var ev))
@@ -104,9 +110,30 @@ namespace Computer_Science_NEA.FunctionHandling.SymbolicMath
             }
 
             // Not supported yet (u^v where v isn't constant)
-            // You can either return a special marker or throw.
             throw new NotSupportedException("Differentiate: non-constant exponent not supported yet.");
         }
 
+        public override Expression Integrate(string variable)
+        {
+            // If constant w.r.t variable: C dx = Cx
+            if (IsConstantWrt(variable))
+                return MultiplyExpression.Make(this, new VariableExpression(variable)).Simplify();
+
+            // Only support x^n where n is numeric and base is exactly the integration variable
+            if (BaseExpr is VariableExpression v && v.Name == variable && Exponent is NumberExpression n)
+            {
+                // Special case n = -1 -> ln|x|
+                if (n.Value == -1m)
+                    throw new NotSupportedException("Integrate: x^-1 not supported yet (needs ln).");
+
+                // x^(n+1) * 1/(n+1)
+                var newExp = n.Value + 1m;
+                var coeff = 1m / newExp;
+
+                return MultiplyExpression.Make(new NumberExpression(coeff), PowerExpression.Make(BaseExpr, new NumberExpression(newExp))).Simplify();
+            }
+
+            throw new NotSupportedException("Integrate: only supports x^n with numeric n for now.");
+        }
     }
 }

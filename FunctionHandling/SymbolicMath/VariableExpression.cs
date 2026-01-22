@@ -37,5 +37,13 @@ namespace Computer_Science_NEA.FunctionHandling.SymbolicMath
             return Name == variable ? new NumberExpression(1m) : new NumberExpression(0m);
         }
 
+        public override Expression Integrate(string variable)
+        {
+            if (Name == variable)
+            {
+                return MultiplyExpression.Make(new NumberExpression(0.5m), PowerExpression.Make(this, new NumberExpression(2m))).Simplify();
+            }
+            return MultiplyExpression.Make(this, new VariableExpression(variable)).Simplify();
+        }
     }
 }

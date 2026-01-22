@@ -41,5 +41,10 @@ namespace Computer_Science_NEA.FunctionHandling.SymbolicMath
         {
             return new NumberExpression(0m);
         }
+
+        public override Expression Integrate(string variable)
+        {
+            return MultiplyExpression.Make(this, new VariableExpression(variable)).Simplify();
+        }
     }
 }

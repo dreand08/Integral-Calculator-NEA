@@ -105,5 +105,11 @@ namespace Computer_Science_NEA.FunctionHandling.SymbolicMath
             var dTerms = Terms.Select(t => t.Differentiate(variable)).ToArray();
             return Make(dTerms).Simplify();
         }
+
+        public override Expression Integrate(string variable)
+        {
+            var integrated = Terms.Select(t => t.Integrate(variable)).ToArray();
+            return Make(integrated).Simplify();
+        }
     }
 }
