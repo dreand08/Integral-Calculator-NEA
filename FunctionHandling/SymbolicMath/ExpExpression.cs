@@ -1,24 +1,25 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace Computer_Science_NEA.FunctionHandling.SymbolicMath
 {
-    public sealed class CosExpression : UnaryExpression
+    public sealed class ExpExpression : UnaryExpression
     {
-        private CosExpression(Expression inner) : base(inner) { }
+        private ExpExpression(Expression inner) : base(inner) { }
 
         public override int Precedence => 80;
 
         public static Expression Make(Expression inner)
         {
-            // cos(0) = 1
+            // exp(0) = 1
             if (inner is NumberExpression n && n.Value == 0m)
                 return new NumberExpression(1m);
 
-            return new CosExpression(inner);
+            return new ExpExpression(inner);
         }
 
         protected override Expression Rebuild(Expression newInner)
@@ -33,14 +34,15 @@ namespace Computer_Science_NEA.FunctionHandling.SymbolicMath
 
         public override Expression Differentiate(string variable)
         {
-            // (cos u)' = -sin(u) * u'
-            return MultiplyExpression.Make(new NumberExpression(-1m), SinExpression.Make(Inner), Inner.Differentiate(variable)).Simplify();
-        }
-        public override Expression Integrate(string variable)
-        {
-            throw new NotSupportedException("Integrate: cos not supported yet.");
+            // (exp u)' = exp(u) * u'
+            return MultiplyExpression.Make(ExpExpression.Make(Inner), Inner.Differentiate(variable)).Simplify();
         }
 
-        public override string ToString() => $"cos({Inner})";
+        public override Expression Integrate(string variable)
+        {
+            throw new NotSupportedException("Integrate: exp not supported yet.");
+        }
+
+        public override string ToString() => $"exp({Inner})";
     }
 }

@@ -11,9 +11,7 @@ namespace Computer_Science_NEA
         static void Main(string[] args)
         {
             var x = new VariableExpression("x");
-            var y = new VariableExpression("y");
-
-            Console.WriteLine(PowerExpression.Make(x, new NumberExpression(5m)).Integrate("x"));
+            Console.WriteLine(ExpExpression.Make(MultiplyExpression.Make(SinExpression.Make(x),CosExpression.Make(x))).Differentiate("x"));
         }
     }
 }
