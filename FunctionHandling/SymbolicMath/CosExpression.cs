@@ -38,7 +38,13 @@ namespace Computer_Science_NEA.FunctionHandling.SymbolicMath
         }
         public override Expression Integrate(string variable)
         {
-            throw new NotSupportedException("Integrate: cos not supported yet.");
+            // ∫ cos(x) dx = sin(x)
+            if (Inner is VariableExpression v && v.Name == variable)
+            {
+                return SinExpression.Make(Inner).Simplify();
+            }
+
+            throw new NotSupportedException("Integrate: only cos(x) supported directly (chain rule handled in MultiplyExpression).");
         }
 
         public override string ToString() => $"cos({Inner})";

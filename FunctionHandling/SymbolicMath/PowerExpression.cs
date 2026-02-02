@@ -119,12 +119,12 @@ namespace Computer_Science_NEA.FunctionHandling.SymbolicMath
             if (IsConstantWrt(variable))
                 return MultiplyExpression.Make(this, new VariableExpression(variable)).Simplify();
 
-            // Only support x^n where n is numeric and base is exactly the integration variable
+            // Case 1: x^n where n is real
             if (BaseExpr is VariableExpression v && v.Name == variable && Exponent is NumberExpression n)
             {
                 // Special case n = -1 -> ln|x|
                 if (n.Value == -1m)
-                    throw new NotSupportedException("Integrate: x^-1 not supported yet (needs ln).");
+                    return LnExpression.Make(BaseExpr).Simplify();
 
                 // x^(n+1) * 1/(n+1)
                 var newExp = n.Value + 1m;
@@ -133,7 +133,12 @@ namespace Computer_Science_NEA.FunctionHandling.SymbolicMath
                 return MultiplyExpression.Make(new NumberExpression(coeff), PowerExpression.Make(BaseExpr, new NumberExpression(newExp))).Simplify();
             }
 
-            throw new NotSupportedException("Integrate: only supports x^n with numeric n for now.");
+            // Case 2: a^x where a is a real constant
+            // ∫ a^x dx = a^x / ln(a)
+            if (BaseExpr is NumberExpression aNum && Exponent is VariableExpression vx && vx.Name == variable)
+            {
+
+            }
         }
     }
 }

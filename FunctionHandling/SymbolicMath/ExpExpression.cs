@@ -40,7 +40,13 @@ namespace Computer_Science_NEA.FunctionHandling.SymbolicMath
 
         public override Expression Integrate(string variable)
         {
-            throw new NotSupportedException("Integrate: exp not supported yet.");
+            // ∫ exp(x) dx = exp(x)
+            if (Inner is VariableExpression v && v.Name == variable)
+            {
+                return ExpExpression.Make(Inner).Simplify();
+            }
+
+            throw new NotSupportedException("Integrate: only exp(x) supported directly (chain rule handled in MultiplyExpression).");
         }
 
         public override string ToString() => $"exp({Inner})";
