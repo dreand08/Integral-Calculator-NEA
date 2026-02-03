@@ -222,25 +222,178 @@ namespace Computer_Science_NEA.FunctionHandling.SymbolicMath
             if (IsConstantWrt(variable))
                 return MultiplyExpression.Make(this, new VariableExpression(variable)).Simplify();
 
+            // Split numeric constants from the rest
             decimal constProduct = 1m;
-            var nonConst = new List<Expression>();
+            var factors = new List<Expression>();
 
             foreach (var f in Factors)
             {
                 if (f is NumberExpression n)
                     constProduct *= n.Value;
                 else
-                    nonConst.Add(f);
+                    factors.Add(f);
+            }
+            // Helper: extract numeric constant multiplier from an expression.
+            // expr = k * rest, where k is numeric constant (decimal), rest is the remaining expression (or 1).
+            static void SplitConst(Expression expr, out decimal k, out Expression rest)
+            {
+                k = 1m;
+
+                if (expr is NumberExpression nn)
+                {
+                    k = nn.Value;
+                    rest = new NumberExpression(1m);
+                    return;
+                }
+
+                if (expr is MultiplyExpression mul)
+                {
+                    decimal prod = 1m;
+                    var nonNums = new List<Expression>();
+
+                    foreach (var ff in mul.Factors)
+                    {
+                        if (ff is NumberExpression nff) prod *= nff.Value;
+                        else nonNums.Add(ff);
+                    }
+
+                    k = prod;
+
+                    if (nonNums.Count == 0) rest = new NumberExpression(1m);
+                    else if (nonNums.Count == 1) rest = nonNums[0];
+                    else rest = MultiplyExpression.Make(nonNums.ToArray());
+
+                    return;
+                }
+
+                rest = expr;
             }
 
-            // If there were no non-constants, it's just a constant
-            if (nonConst.Count == 0)
+            // Helper: compares expressions structurally using their simplified string form.
+            // This is a pragmatic approach since Add/Multiply/Power don't override Equals.
+            static bool Same(Expression a, Expression b)
+                => a.Simplify().ToString() == b.Simplify().ToString();
+
+            // Helper: try to find and remove one factor that matches "target" up to a numeric constant.
+            // Returns the numeric multiplier relating factor to target:
+            // factor = k * target
+            bool TryRemoveConstMultipleOf(Expression target, out decimal k)
+            {
+                for (int i = 0; i < factors.Count; i++)
+                {
+                    SplitConst(factors[i], out var ki, out var rest);
+                    if (Same(rest, target))
+                    {
+                        k = ki;
+                        factors.RemoveAt(i);
+                        return true;
+                    }
+                }
+
+                k = 1m;
+                return false;
+            }
+
+            //Rule 1: u' * u^-1  => ln(u) (with constant multiple allowed)
+            for (int i = 0; i < factors.Count; i++)
+            {
+                if (factors[i] is PowerExpression p && p.Exponent is NumberExpression ne && ne.Value == -1m)
+                {
+                    var u = p.BaseExpr;
+                    var du = u.Differentiate(variable).Simplify();
+
+                    // Remove the u^-1 factor
+                    factors.RemoveAt(i);
+
+                    // Try remove a factor that is (k * du)
+                    if (TryRemoveConstMultipleOf(du, out var k))
+                    {
+                        // Only support exactly (const) * du * u^-1 for now
+                        if (factors.Count == 0)
+                        {
+                            return MultiplyExpression.Make(new NumberExpression(constProduct * k), LnExpression.Make(u)).Simplify();
+                        }
+                    }
+
+                    // Put it back if not matched (so we don't corrupt state)
+                    factors.Insert(i, p);
+                }
+            }
+
+            // Rule 2: exp(u) * u' => exp(u) (constant multiple allowed on u')
+            for (int i = 0; i < factors.Count; i++)
+            {
+                if (factors[i] is ExpExpression exp)
+                {
+                    var u = exp.Inner;
+                    var du = u.Differentiate(variable).Simplify();
+
+                    // Remove exp(u)
+                    factors.RemoveAt(i);
+
+                    if (TryRemoveConstMultipleOf(du, out var k))
+                    {
+                        if (factors.Count == 0)
+                        {
+                            return MultiplyExpression.Make(new NumberExpression(constProduct * k), ExpExpression.Make(u)).Simplify();
+                        }
+                    }
+
+                    factors.Insert(i, exp);
+                }
+            }
+
+            //Rule 3: sin(u) * u' => -cos(u) (constant multiple allowed on u')
+            for (int i = 0; i < factors.Count; i++)
+            {
+                if (factors[i] is SinExpression sin)
+                {
+                    var u = sin.Inner;
+                    var du = u.Differentiate(variable).Simplify();
+
+                    factors.RemoveAt(i);
+
+                    if (TryRemoveConstMultipleOf(du, out var k))
+                    {
+                        if (factors.Count == 0)
+                        {
+                            return MultiplyExpression.Make(new NumberExpression(constProduct * k), new NumberExpression(-1m), CosExpression.Make(u)).Simplify();
+                        }
+                    }
+
+                    factors.Insert(i, sin);
+                }
+            }
+
+            //Rule 4: cos(u) * u' => sin(u) (constant multiple allowed on u')
+            for (int i = 0; i < factors.Count; i++)
+            {
+                if (factors[i] is CosExpression cos)
+                {
+                    var u = cos.Inner;
+                    var du = u.Differentiate(variable).Simplify();
+
+                    factors.RemoveAt(i);
+
+                    if (TryRemoveConstMultipleOf(du, out var k))
+                    {
+                        if (factors.Count == 0)
+                        {
+                            return MultiplyExpression.Make(new NumberExpression(constProduct * k), SinExpression.Make(u)).Simplify();
+                        }
+                    }
+
+                    factors.Insert(i, cos);
+                }
+            }
+
+            //Fallback: constant multiple rule (single non-constant only)
+            if (factors.Count == 0)
                 return MultiplyExpression.Make(new NumberExpression(constProduct), new VariableExpression(variable)).Simplify();
 
-            // Only support pulling out constants times a sinle remaining expression for now
-            if (nonConst.Count == 1)
+            if (factors.Count == 1)
             {
-                var innerIntegral = nonConst[0].Integrate(variable);
+                var innerIntegral = factors[0].Integrate(variable);
 
                 if (constProduct == 1m) return innerIntegral.Simplify();
 

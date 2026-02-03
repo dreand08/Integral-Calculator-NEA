@@ -137,8 +137,13 @@ namespace Computer_Science_NEA.FunctionHandling.SymbolicMath
             // ∫ a^x dx = a^x / ln(a)
             if (BaseExpr is NumberExpression aNum && Exponent is VariableExpression vx && vx.Name == variable)
             {
+                // a == 1 => 1^x = 1, integral is x
+                if (aNum.Value == 1m) return new VariableExpression(variable);
 
+                return MultiplyExpression.Make(this, PowerExpression.Make(LnExpression.Make(aNum), new NumberExpression(-1m))).Simplify();
             }
+
+            throw new NotSupportedException("Integrate: power form not supported yet.");
         }
     }
 }
