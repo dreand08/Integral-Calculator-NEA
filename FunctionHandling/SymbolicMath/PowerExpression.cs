@@ -44,11 +44,53 @@ namespace Computer_Science_NEA.FunctionHandling.SymbolicMath
             // x^1 => x
             if (IsOne(e)) return b;
 
+            // Double-angle trig rewrites 
+            // sin(u)^2 = 0.5 * (1 - cos(2u))
+            // cos(u)^2 = 0.5 * (1 + cos(2u))
+            if (e is NumberExpression powN && powN.Value == 2m)
+            {
+                // Build 2u
+                Expression TwoU(Expression u) =>
+                    MultiplyExpression.Make(new NumberExpression(2m), u).Simplify();
+
+                if (b is SinExpression sin)
+                {
+                    var twoU = TwoU(sin.Inner);
+                    var cos2u = CosExpression.Make(twoU);
+
+                    // 0.5 * (1 + (-1 * cos(2u)))
+                    return MultiplyExpression.Make(
+                        new NumberExpression(0.5m),
+                        AddExpression.Make(
+                            new NumberExpression(1m),
+                            MultiplyExpression.Make(new NumberExpression(-1m), cos2u)
+                        )
+                    ).Simplify();
+                }
+
+                if (b is CosExpression cos)
+                {
+                    var twoU = TwoU(cos.Inner);
+                    var cos2u = CosExpression.Make(twoU);
+
+                    // 0.5 * (1 + cos(2u))
+                    return MultiplyExpression.Make(
+                        new NumberExpression(0.5m),
+                        AddExpression.Make(
+                            new NumberExpression(1m),
+                            cos2u
+                        )
+                    ).Simplify();
+                }
+            }
+
+
             // 0^x => 0 (ignoring edge cases like 0^0)
             if (IsZero(b)) return new NumberExpression(0m);
 
             // 1^x => 1
             if (IsOne(b)) return new NumberExpression(1m);
+
             
             // (u^a)^b => u^(a*b)
             if (b is PowerExpression innerPow && IsNumber(innerPow.Exponent, out var a) && IsNumber(e, out var bExp))

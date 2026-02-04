@@ -38,10 +38,14 @@ namespace Computer_Science_NEA.FunctionHandling.SymbolicMath
         }
         public override Expression Integrate(string variable)
         {
-            // ∫ cos(x) dx = sin(x)
-            if (Inner is VariableExpression v && v.Name == variable)
+            var du = Inner.Differentiate(variable).Simplify();
+
+            if (du is NumberExpression k && k.Value != 0m)
             {
-                return SinExpression.Make(Inner).Simplify();
+                // ∫ cos(u) dx = sin(u) * (1/k)
+                var inv = new NumberExpression(1m / k.Value);
+
+                return MultiplyExpression.Make(inv, SinExpression.Make(Inner)).Simplify();
             }
 
             throw new NotSupportedException("Integrate: only cos(x) supported directly (chain rule handled in MultiplyExpression).");

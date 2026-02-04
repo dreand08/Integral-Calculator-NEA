@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -274,6 +275,16 @@ namespace Computer_Science_NEA.FunctionHandling.SymbolicMath
             static bool Same(Expression a, Expression b)
                 => a.Simplify().ToString() == b.Simplify().ToString();
 
+            static void SplitDu(Expression du, out decimal duConst, out Expression duRest)
+            {
+                SplitConst(du, out duConst, out duRest);
+
+                // Safety: if duRest became 1, keep it as 1
+                if (duRest is NumberExpression n && n.Value == 1m)
+                    duRest = new NumberExpression(1m);
+            }
+
+
             // Helper: try to find and remove one factor that matches "target" up to a numeric constant.
             // Returns the numeric multiplier relating factor to target:
             // factor = k * target
@@ -301,21 +312,21 @@ namespace Computer_Science_NEA.FunctionHandling.SymbolicMath
                 {
                     var u = p.BaseExpr;
                     var du = u.Differentiate(variable).Simplify();
+                    SplitDu(du, out var duConst, out var duRest);
 
                     // Remove the u^-1 factor
                     factors.RemoveAt(i);
 
-                    // Try remove a factor that is (k * du)
-                    if (TryRemoveConstMultipleOf(du, out var k))
+                    // Try remove a factor that is (k * duRest)
+                    if (TryRemoveConstMultipleOf(duRest, out var k))
                     {
-                        // Only support exactly (const) * du * u^-1 for now
                         if (factors.Count == 0)
                         {
-                            return MultiplyExpression.Make(new NumberExpression(constProduct * k), LnExpression.Make(u)).Simplify();
+                            var multiplier = (constProduct * k) / duConst;
+
+                            return MultiplyExpression.Make(new NumberExpression(multiplier), LnExpression.Make(u)).Simplify();
                         }
                     }
-
-                    // Put it back if not matched (so we don't corrupt state)
                     factors.Insert(i, p);
                 }
             }
@@ -327,15 +338,22 @@ namespace Computer_Science_NEA.FunctionHandling.SymbolicMath
                 {
                     var u = exp.Inner;
                     var du = u.Differentiate(variable).Simplify();
+                    SplitDu(du, out var duConst, out var duRest);
 
                     // Remove exp(u)
                     factors.RemoveAt(i);
 
-                    if (TryRemoveConstMultipleOf(du, out var k))
+                    //Trying to remove a factor that is (k * duRest)
+                    if (TryRemoveConstMultipleOf(duRest, out var k))
                     {
                         if (factors.Count == 0)
                         {
-                            return MultiplyExpression.Make(new NumberExpression(constProduct * k), ExpExpression.Make(u)).Simplify();
+                            // integrand = constProduct * k * duRest * exp(u)
+                            // but du = duConst * duRest
+                            // => integrand = (constProduct*k/duConst) * exp(u) * du
+                            var multiplier = (constProduct * k) / duConst;
+
+                            return MultiplyExpression.Make(new NumberExpression(multiplier), ExpExpression.Make(u)).Simplify();
                         }
                     }
 
@@ -350,14 +368,17 @@ namespace Computer_Science_NEA.FunctionHandling.SymbolicMath
                 {
                     var u = sin.Inner;
                     var du = u.Differentiate(variable).Simplify();
+                    SplitDu(du, out var duConst, out var duRest);
 
                     factors.RemoveAt(i);
 
-                    if (TryRemoveConstMultipleOf(du, out var k))
+                    if (TryRemoveConstMultipleOf(duRest, out var k))
                     {
                         if (factors.Count == 0)
                         {
-                            return MultiplyExpression.Make(new NumberExpression(constProduct * k), new NumberExpression(-1m), CosExpression.Make(u)).Simplify();
+                            var multiplier = (constProduct * k) / duConst;
+
+                            return MultiplyExpression.Make(new NumberExpression(multiplier), new NumberExpression(-1m), CosExpression.Make(u)).Simplify();
                         }
                     }
 
@@ -372,14 +393,17 @@ namespace Computer_Science_NEA.FunctionHandling.SymbolicMath
                 {
                     var u = cos.Inner;
                     var du = u.Differentiate(variable).Simplify();
+                    SplitDu(du, out var duConst, out var duRest);
 
                     factors.RemoveAt(i);
 
-                    if (TryRemoveConstMultipleOf(du, out var k))
+                    if (TryRemoveConstMultipleOf(duRest, out var k))
                     {
                         if (factors.Count == 0)
                         {
-                            return MultiplyExpression.Make(new NumberExpression(constProduct * k), SinExpression.Make(u)).Simplify();
+                            var multiplier = (constProduct * k) / duConst;
+
+                            return MultiplyExpression.Make(new NumberExpression(multiplier), SinExpression.Make(u)).Simplify();
                         }
                     }
 
