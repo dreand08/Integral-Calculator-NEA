@@ -88,6 +88,66 @@ namespace Computer_Science_NEA.FunctionHandling.SymbolicMath
                 }
             }
 
+            //Double-angle trig: sin(u)*cos(u) = 0.5*sin(2u)
+            bool changed = true;
+            while (changed)
+            {
+                changed = false;
+
+                int sinIndex = -1;
+                int cosIndex = -1;
+                Expression uFound = null;
+
+                for (int i = 0; i < nonConst.Count; i++)
+                {
+                    if (nonConst[i] is SinExpression s)
+                    {
+                        for (int j = 0; j < nonConst.Count; j++)
+                        {
+                            if (i == j) continue;
+                            if (nonConst[j] is CosExpression c)
+                            {
+                                if (Same(s.Inner, c.Inner))
+                                {
+                                    sinIndex = i;
+                                    cosIndex = j;
+                                    uFound = s.Inner;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    if (uFound != null) break;
+                }
+
+                if (uFound != null)
+                {
+                    // remove higher index first
+                    if (sinIndex > cosIndex)
+                    {
+                        nonConst.RemoveAt(sinIndex);
+                        nonConst.RemoveAt(cosIndex);
+                    }
+                    else
+                    {
+                        nonConst.RemoveAt(cosIndex);
+                        nonConst.RemoveAt(sinIndex);
+                    }
+
+                    // multiply constant by 1/2
+                    constProduct *= 0.5m;
+
+                    // add sin(2u)
+                    nonConst.Add(
+                        SinExpression.Make(
+                            MultiplyExpression.Make(new NumberExpression(2m), uFound).Simplify()
+                        )
+                    );
+
+                    changed = true;
+                }
+            }
+
             //Dropping the *1
             var result = new List<Expression>();
             foreach (var f in nonConst)
@@ -101,7 +161,7 @@ namespace Computer_Science_NEA.FunctionHandling.SymbolicMath
                 result.Add(new NumberExpression(constProduct));
             }
 
-            //x^a * x^b => x^(a+b) (only numberic)
+            //x^a * x^b => x^(a+b)
             var combined = new List<Expression>();
             var exponentMap = new Dictionary<Expression, decimal>();
 
@@ -115,7 +175,7 @@ namespace Computer_Science_NEA.FunctionHandling.SymbolicMath
 
                 if (TryGetNumericExponent(f, out var b, out var e))
                 {
-                    // Key point: uses Expression.Equals, so VariableExpression("x") matches itself,
+                    //uses Expression.Equals, so VariableExpression("x") matches itself,
                     // and structurally equal bases will combine if Equals is implemented for them.
                     if (exponentMap.ContainsKey(b)) exponentMap[b] += e;
                     else exponentMap[b] = e;
@@ -235,7 +295,7 @@ namespace Computer_Science_NEA.FunctionHandling.SymbolicMath
                     factors.Add(f);
             }
             // Helper: extract numeric constant multiplier from an expression.
-            // expr = k * rest, where k is numeric constant (decimal), rest is the remaining expression (or 1).
+            // expr = k * rest, where k is numeric constant, rest is the remaining expression
             static void SplitConst(Expression expr, out decimal k, out Expression rest)
             {
                 k = 1m;
@@ -270,22 +330,17 @@ namespace Computer_Science_NEA.FunctionHandling.SymbolicMath
                 rest = expr;
             }
 
-            // Helper: compares expressions structurally using their simplified string form.
-            // This is a pragmatic approach since Add/Multiply/Power don't override Equals.
-            static bool Same(Expression a, Expression b)
-                => a.Simplify().ToString() == b.Simplify().ToString();
-
             static void SplitDu(Expression du, out decimal duConst, out Expression duRest)
             {
                 SplitConst(du, out duConst, out duRest);
 
-                // Safety: if duRest became 1, keep it as 1
+                //if duRest became 1, keep it as 1
                 if (duRest is NumberExpression n && n.Value == 1m)
                     duRest = new NumberExpression(1m);
             }
 
 
-            // Helper: try to find and remove one factor that matches "target" up to a numeric constant.
+            // Helper: try to find and remove one factor that matches target up to a numeric constant.
             // Returns the numeric multiplier relating factor to target:
             // factor = k * target
             bool TryRemoveConstMultipleOf(Expression target, out decimal k)
@@ -305,7 +360,7 @@ namespace Computer_Science_NEA.FunctionHandling.SymbolicMath
                 return false;
             }
 
-            //Rule 1: u' * u^-1  => ln(u) (with constant multiple allowed)
+            //Rule 1: u' * u^-1  => ln(u)
             for (int i = 0; i < factors.Count; i++)
             {
                 if (factors[i] is PowerExpression p && p.Exponent is NumberExpression ne && ne.Value == -1m)
@@ -411,7 +466,7 @@ namespace Computer_Science_NEA.FunctionHandling.SymbolicMath
                 }
             }
 
-            //Fallback: constant multiple rule (single non-constant only)
+            //Fallback: constant multiple rule
             if (factors.Count == 0)
                 return MultiplyExpression.Make(new NumberExpression(constProduct), new VariableExpression(variable)).Simplify();
 
@@ -424,6 +479,122 @@ namespace Computer_Science_NEA.FunctionHandling.SymbolicMath
                 return MultiplyExpression.Make(new NumberExpression(constProduct), innerIntegral).Simplify();
             }
 
+            // Integration by parts (limited): u * dv where u = x^n and dv = sin/cos/exp
+            // Only attempt when there are exactly 2 non-constant factors left
+            if (factors.Count == 2)
+            {
+                //Helpers local to Integrate:
+                static bool IsNonZeroConst(Expression e, out decimal k)
+                {
+                    if (e is NumberExpression n && n.Value != 0m)
+                    {
+                        k = n.Value;
+                        return true;
+                    }
+                    k = 0m;
+                    return false;
+                }
+
+                static bool TryGetVarPower(Expression e, string variable, out int n)
+                {
+                    // x
+                    if (e is VariableExpression v && v.Name == variable)
+                    {
+                        n = 1;
+                        return true;
+                    }
+
+                    // x^n  where n is a positive integer number
+                    if (e is PowerExpression p &&
+                        p.BaseExpr is VariableExpression vb && vb.Name == variable &&
+                        p.Exponent is NumberExpression ne)
+                    {
+                        // Only accept integer >= 1 for parts 
+                        if (ne.Value % 1m == 0m)
+                        {
+                            int ni = (int)ne.Value;
+                            if (ni >= 1)
+                            {
+                                n = ni;
+                                return true;
+                            }
+                        }
+                    }
+
+                    n = 0;
+                    return false;
+                }
+
+                static bool IsLinearInner(Expression inner, string variable)
+                {
+                    // linear means derivative is a non-zero constant
+                    var d = inner.Differentiate(variable).Simplify();
+                    return d is NumberExpression n && n.Value != 0m;
+                }
+
+                static bool IsTrigOrExpLinear(Expression e, string variable)
+                {
+                    return (e is SinExpression s && IsLinearInner(s.Inner, variable))
+                        || (e is CosExpression c && IsLinearInner(c.Inner, variable))
+                        || (e is ExpExpression ex && IsLinearInner(ex.Inner, variable));
+                }
+
+                // Try pick (u, dv) from the two factors
+                Expression u = null;
+                Expression dv = null;
+                int uPow = 0;
+
+                var a = factors[0];
+                var b = factors[1];
+
+                //Prefer the polynomial as u
+                if (TryGetVarPower(a, variable, out var na) && IsTrigOrExpLinear(b, variable))
+                {
+                    u = a; dv = b; uPow = na;
+                }
+                else if (TryGetVarPower(b, variable, out var nb) && IsTrigOrExpLinear(a, variable))
+                {
+                    u = b; dv = a; uPow = nb;
+                }
+
+                if (u != null && dv != null)
+                {
+                    // du
+                    var du = u.Differentiate(variable).Simplify(); // should reduce degree
+
+                    // make sure du is simpler by degree therefore preventing loops
+                    //proceed only if du is constant or still a smaller x^m.
+                    bool duOk = (du is NumberExpression) ||
+                        (TryGetVarPower(du is MultiplyExpression ? du : du, variable, out var _) == false ? true: true); 
+
+                    if (duOk)
+                    {
+                        try
+                        {
+                            // v = ∫ dv dx  (this works because dv is sin/cos/exp of linear)
+                            var v = dv.Integrate(variable).Simplify();
+
+                            // ∫ u*dv = u*v - ∫ v*du
+                            var uv = MultiplyExpression.Make(u, v).Simplify();
+
+                            var vdu = MultiplyExpression.Make(v, du).Simplify();
+                            var integralVdu = vdu.Integrate(variable).Simplify();
+
+                            var result = AddExpression.Make(uv, MultiplyExpression.Make(new NumberExpression(-1m), integralVdu)).Simplify();
+
+                            // Put back any numeric constant
+                            if (constProduct != 1m)
+                                return MultiplyExpression.Make(new NumberExpression(constProduct), result).Simplify();
+
+                            return result;
+                        }
+                        catch (NotSupportedException)
+                        {
+                            // If parts can't finish, fall through to the normal error
+                        }
+                    }
+                }
+            }
             throw new NotSupportedException("Integrate: product of multiple non-constant factors not supported yet.");
         }
     }

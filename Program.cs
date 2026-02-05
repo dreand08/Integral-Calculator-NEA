@@ -12,25 +12,22 @@ namespace Computer_Science_NEA
         {
             var x = new VariableExpression("x");
 
-            // sin(3x)
-            Console.WriteLine(
-                SinExpression.Make(MultiplyExpression.Make(new NumberExpression(3m), x))
-                    .Integrate("x")
-            ); // expect: (-1/3) * cos(3*x)
+            // x * exp(2x)
+            var t1 = MultiplyExpression.Make(x, ExpExpression.Make(MultiplyExpression.Make(new NumberExpression(2m), x))).Simplify();
+            Console.WriteLine(t1);
+            Console.WriteLine(t1.Integrate("x"));
 
-            // cos(5x + 1)
-            Console.WriteLine(
-                CosExpression.Make(AddExpression.Make(
-                    MultiplyExpression.Make(new NumberExpression(5m), x),
-                    new NumberExpression(1m)
-                )).Integrate("x")
-            ); // expect: (1/5) * sin(5*x + 1)
+            // x * sin(3x)
+            var t2 = MultiplyExpression.Make(x, SinExpression.Make(MultiplyExpression.Make(new NumberExpression(3m), x))).Simplify();
+            Console.WriteLine(t2);
+            Console.WriteLine(t2.Integrate("x"));
 
-            // exp(2x)
-            Console.WriteLine(
-                ExpExpression.Make(MultiplyExpression.Make(new NumberExpression(2m), x))
-                    .Integrate("x")
-            ); // expect: (1/2) * exp(2*x)
+            // x * cos(5x + 1)
+            var t3 = MultiplyExpression.Make(x, CosExpression.Make(AddExpression.Make(MultiplyExpression.Make(new NumberExpression(5m), x), new NumberExpression(1m)))).Simplify();
+            Console.WriteLine(t3);
+            Console.WriteLine(t3.Integrate("x"));
+
+
         }
     }
 }

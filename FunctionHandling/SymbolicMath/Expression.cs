@@ -39,5 +39,9 @@ namespace Computer_Science_NEA.FunctionHandling.SymbolicMath
             return d is NumberExpression n && n.Value == 0m;
         }
 
+        // Helper: compares expressions structurally using their simplified string form.
+        protected static bool Same(Expression a, Expression b)
+            => a.Simplify().ToString() == b.Simplify().ToString();
+
     }
 }
