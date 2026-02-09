@@ -151,8 +151,15 @@ namespace Computer_Science_NEA.FunctionHandling.SymbolicMath
                 ).Simplify();
             }
 
-            // Not supported yet (u^v where v isn't constant)
-            throw new NotSupportedException("Differentiate: non-constant exponent not supported yet.");
+            // Handle a^x where a is a constant number and exponent is the variable
+            if (BaseExpr is NumberExpression a && Exponent is VariableExpression vx && vx.Name == variable)
+            {
+                // d/dx (a^x) = a^x * ln(a)
+                return MultiplyExpression.Make(this, LnExpression.Make(a)).Simplify();
+            }
+
+            // Not supported yet
+            throw new NotSupportedException("Differentiate: non-constant exponent not supported yet for functions.");
         }
 
         public override Expression Integrate(string variable)
