@@ -151,11 +151,12 @@ namespace Computer_Science_NEA.FunctionHandling.SymbolicMath
                 ).Simplify();
             }
 
-            // Handle a^x where a is a constant number and exponent is the variable
-            if (BaseExpr is NumberExpression a && Exponent is VariableExpression vx && vx.Name == variable)
+            // Handle a^u where a is a constant number (chain rule)
+            if (BaseExpr is NumberExpression aConst)
             {
-                // d/dx (a^x) = a^x * ln(a)
-                return MultiplyExpression.Make(this, LnExpression.Make(a)).Simplify();
+                var du = Exponent.Differentiate(variable).Simplify();
+                // d/dx(a^u) = a^u * ln(a) * u'
+                return MultiplyExpression.Make(this, LnExpression.Make(aConst), du).Simplify();
             }
 
             // Not supported yet

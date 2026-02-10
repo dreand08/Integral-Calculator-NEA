@@ -56,6 +56,44 @@ namespace Computer_Science_NEA.FunctionHandling.Parsing
                 return false;
             }
 
+            private bool IsStartOfPower(Token t)
+            {
+                // We are about to parse the next factor. If that factor is immediately followed by '^',
+                // we should treat it as a single powered factor (e.g., e^x) instead of multiplying it
+                // into the previous token first.
+
+                if (_idx >= _toks.Count) return false;
+
+                int j = _idx;
+
+                if (_toks[j].Type is TokenType.Identifier or TokenType.Number)
+                {
+                    return (j + 1 < _toks.Count) && _toks[j + 1].Type == TokenType.Caret;
+                }
+
+                // handle "(... )^x" as a powered factor too
+                if (_toks[j].Type == TokenType.LParen)
+                {
+                    int depth = 0;
+                    for (; j < _toks.Count; j++)
+                    {
+                        if (_toks[j].Type == TokenType.LParen) depth++;
+                        else if (_toks[j].Type == TokenType.RParen)
+                        {
+                            depth--;
+                            if (depth == 0)
+                            {
+                                // j is matching ')'
+                                return (j + 1 < _toks.Count) && _toks[j + 1].Type == TokenType.Caret;
+                            }
+                        }
+                    }
+                }
+
+                return false;
+            }
+
+
             // Expression -> Term ((+|-) Term)*
             public Expression ParseExpression()
             {
@@ -96,7 +134,7 @@ namespace Computer_Science_NEA.FunctionHandling.Parsing
 
                     // Implicit multiplication:
                     // If the next token can start a factor/primary, then multiplication is implied.
-                    if (IsImplicitMulStart(Current))
+                    if (IsImplicitMulStart(Current) && !IsStartOfPower(Current))
                     {
                         left = MultiplyExpression.Make(left, ParseFactor()).Simplify();
                         continue;
@@ -116,10 +154,28 @@ namespace Computer_Science_NEA.FunctionHandling.Parsing
                 if (Match(TokenType.Caret))
                 {
                     var right = ParseFactor(); // right associative: a^(b^c)
+                    // Rewrite e^u as exp(u) to avoid floating approximations of e
+                    if (IsEConstant(left))
+                        return ExpExpression.Make(right).Simplify();
                     return PowerExpression.Make(left, right).Simplify();
                 }
 
                 return left;
+            }
+            private static bool IsEConstant(Expression e)
+            {
+                if (e is VariableExpression v && v.Name.Equals("e", StringComparison.OrdinalIgnoreCase))
+                    return true;
+
+                // If you currently parse e as a number, catch that too.
+                if (e is NumberExpression n)
+                {
+                    // Rough check: close to Math.E (decimal approximation)
+                    var dv = (double)n.Value;
+                    return Math.Abs(dv - Math.E) < 1e-12;
+                }
+
+                return false;
             }
 
             // Unary -> (- Unary) | Primary
@@ -170,8 +226,6 @@ namespace Computer_Science_NEA.FunctionHandling.Parsing
                     }
 
                     // Constants
-                    if (string.Equals(name, "e", StringComparison.OrdinalIgnoreCase))
-                        return new NumberExpression((decimal)Math.E);
 
                     if (string.Equals(name, "pi", StringComparison.OrdinalIgnoreCase))
                         return new NumberExpression((decimal)Math.PI);

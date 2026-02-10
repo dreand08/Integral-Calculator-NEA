@@ -13,8 +13,7 @@ namespace Computer_Science_NEA
         {
             var expr = ExpressionParser.Parse("xe^x");
             Console.WriteLine(expr);
-            Console.WriteLine(expr.Integrate("x"));  
-
+            Console.WriteLine(expr.Integrate("x"));
         }
     }
 }
