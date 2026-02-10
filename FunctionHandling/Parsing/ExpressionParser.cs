@@ -5,6 +5,7 @@ using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 
 namespace Computer_Science_NEA.FunctionHandling.Parsing
 {
@@ -56,44 +57,6 @@ namespace Computer_Science_NEA.FunctionHandling.Parsing
                 return false;
             }
 
-            private bool IsStartOfPower(Token t)
-            {
-                // We are about to parse the next factor. If that factor is immediately followed by '^',
-                // we should treat it as a single powered factor (e.g., e^x) instead of multiplying it
-                // into the previous token first.
-
-                if (_idx >= _toks.Count) return false;
-
-                int j = _idx;
-
-                if (_toks[j].Type is TokenType.Identifier or TokenType.Number)
-                {
-                    return (j + 1 < _toks.Count) && _toks[j + 1].Type == TokenType.Caret;
-                }
-
-                // handle "(... )^x" as a powered factor too
-                if (_toks[j].Type == TokenType.LParen)
-                {
-                    int depth = 0;
-                    for (; j < _toks.Count; j++)
-                    {
-                        if (_toks[j].Type == TokenType.LParen) depth++;
-                        else if (_toks[j].Type == TokenType.RParen)
-                        {
-                            depth--;
-                            if (depth == 0)
-                            {
-                                // j is matching ')'
-                                return (j + 1 < _toks.Count) && _toks[j + 1].Type == TokenType.Caret;
-                            }
-                        }
-                    }
-                }
-
-                return false;
-            }
-
-
             // Expression -> Term ((+|-) Term)*
             public Expression ParseExpression()
             {
@@ -134,7 +97,7 @@ namespace Computer_Science_NEA.FunctionHandling.Parsing
 
                     // Implicit multiplication:
                     // If the next token can start a factor/primary, then multiplication is implied.
-                    if (IsImplicitMulStart(Current) && !IsStartOfPower(Current))
+                    if (IsImplicitMulStart(Current))
                     {
                         left = MultiplyExpression.Make(left, ParseFactor()).Simplify();
                         continue;
@@ -194,12 +157,20 @@ namespace Computer_Science_NEA.FunctionHandling.Parsing
             private Expression ParsePrimary()
             {
                 // Parentheses
-                if (Match(TokenType.LParen))
+                if (Current.Type == TokenType.LParen)
                 {
-                    var inner = ParseExpression();
-                    Consume(TokenType.RParen, "Missing ')'");
-                    return inner;
+                    var lower = name.ToLowerInvariant();
+                    bool isKnownFunc = lower is "sin" or "cos" or "exp" or "ln";
+
+                    if (isKnownFunc)
+                    {
+                        Consume(TokenType.LParen);
+                        var arg = ParseExpression();
+                        Consume(TokenType.RParen, "Missing ')' after function argument");
+                        return MakeFunction(name, arg, idTok.Pos);
+                    }
                 }
+
 
                 // Number
                 if (Current.Type == TokenType.Number)

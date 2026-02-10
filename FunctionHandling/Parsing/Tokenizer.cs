@@ -8,6 +8,12 @@ namespace Computer_Science_NEA.FunctionHandling.Parsing
 {
     public static class Tokenizer
     {
+        // Names we want to keep as a single identifier token (functions and constants)
+        private static readonly HashSet<string> KnownNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "sin", "cos", "exp", "ln", "pi", "e"
+        };
+
         public static List<Token> Tokenize(string input)
         {
             if (input == null) throw new ArgumentNullException(nameof(input));
@@ -28,7 +34,7 @@ namespace Computer_Science_NEA.FunctionHandling.Parsing
 
                 int start = i;
 
-                // Number: 12, 12.34, .5, 5.
+                // Numbers
                 if (char.IsDigit(c) || c == '.')
                 {
                     bool seenDot = (c == '.');
@@ -70,7 +76,33 @@ namespace Computer_Science_NEA.FunctionHandling.Parsing
                     while (i < input.Length && (char.IsLetterOrDigit(input[i]) || input[i] == '_'))
                         i++;
 
-                    tokens.Add(new Token(TokenType.Identifier, input[start..i], start));
+                    var text = input[start..i];
+
+                    // If it's a known function/constant name then keep it as one
+                    if (KnownNames.Contains(text))
+                    {
+                        tokens.Add(new Token(TokenType.Identifier, text, start));
+                        continue;
+                    }
+
+                    // If it's only letters and longer than 1 treat as implicit multiplication.
+                    bool lettersOnly = true;
+                    for (int k = 0; k < text.Length; k++)
+                    {
+                        if (!char.IsLetter(text[k])) { lettersOnly = false; break; }
+                    }
+
+                    if (lettersOnly && text.Length > 1)
+                    {
+                        for (int k = 0; k < text.Length; k++)
+                        {
+                            tokens.Add(new Token(TokenType.Identifier, text[k].ToString(), start + k));
+                        }
+                        continue;
+                    }
+
+                    // Otherwise treat it as a single identifier
+                    tokens.Add(new Token(TokenType.Identifier, text, start));
                     continue;
                 }
 
