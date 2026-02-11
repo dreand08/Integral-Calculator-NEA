@@ -157,20 +157,12 @@ namespace Computer_Science_NEA.FunctionHandling.Parsing
             private Expression ParsePrimary()
             {
                 // Parentheses
-                if (Current.Type == TokenType.LParen)
+                if (Match(TokenType.LParen))
                 {
-                    var lower = name.ToLowerInvariant();
-                    bool isKnownFunc = lower is "sin" or "cos" or "exp" or "ln";
-
-                    if (isKnownFunc)
-                    {
-                        Consume(TokenType.LParen);
-                        var arg = ParseExpression();
-                        Consume(TokenType.RParen, "Missing ')' after function argument");
-                        return MakeFunction(name, arg, idTok.Pos);
-                    }
+                    var inner = ParseExpression();
+                    Consume(TokenType.RParen, "Missing ')'");
+                    return inner;
                 }
-
 
                 // Number
                 if (Current.Type == TokenType.Number)
@@ -187,17 +179,21 @@ namespace Computer_Science_NEA.FunctionHandling.Parsing
                 {
                     var idTok = Consume(TokenType.Identifier);
                     var name = idTok.Text;
+                    var lower = name.ToLowerInvariant();
+
+                    bool isKnownFunc = lower == "sin" || lower == "cos" || lower == "exp" || lower == "ln";
 
                     // Function call: name(expr)
-                    if (Match(TokenType.LParen))
+                    if (isKnownFunc && Current.Type == TokenType.LParen)
                     {
+                        Consume(TokenType.LParen);
                         var arg = ParseExpression();
                         Consume(TokenType.RParen, "Missing ')' after function argument");
-                        return MakeFunction(name, arg, idTok.Pos);
+                        return MakeFunction(lower, arg, idTok.Pos);
                     }
 
-                    // Constants
 
+                    // Constants
                     if (string.Equals(name, "pi", StringComparison.OrdinalIgnoreCase))
                         return new NumberExpression((decimal)Math.PI);
 

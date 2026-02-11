@@ -11,9 +11,8 @@ namespace Computer_Science_NEA
     {
         static void Main(string[] args)
         {
-            var expr = ExpressionParser.Parse("x(1 + x^2)^-0.5");
-            Console.WriteLine(expr);
-            Console.WriteLine(expr.Integrate("x"));
+            VariableExpression x = new VariableExpression("x");
+            Console.WriteLine(MultiplyExpression.Make(x, PowerExpression.Make(AddExpression.Make(new NumberExpression(1), PowerExpression.Make(x, new NumberExpression(2))), new NumberExpression(-0.5m))).Integrate("x"));
         }
     }
 }

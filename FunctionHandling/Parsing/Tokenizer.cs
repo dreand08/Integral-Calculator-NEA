@@ -72,6 +72,7 @@ namespace Computer_Science_NEA.FunctionHandling.Parsing
                 // Identifier: x, sin, cos, exp, ln, etc.
                 if (char.IsLetter(c) || c == '_')
                 {
+                    int runStart = i;
                     i++;
                     while (i < input.Length && (char.IsLetterOrDigit(input[i]) || input[i] == '_'))
                         i++;
@@ -81,23 +82,43 @@ namespace Computer_Science_NEA.FunctionHandling.Parsing
                     // If it's a known function/constant name then keep it as one
                     if (KnownNames.Contains(text))
                     {
-                        tokens.Add(new Token(TokenType.Identifier, text, start));
+                        tokens.Add(new Token(TokenType.Identifier, text, runStart));
                         continue;
                     }
 
                     // If it's only letters and longer than 1 treat as implicit multiplication.
-                    bool lettersOnly = true;
-                    for (int k = 0; k < text.Length; k++)
-                    {
-                        if (!char.IsLetter(text[k])) { lettersOnly = false; break; }
-                    }
+                    bool lettersOnly = text.All(char.IsLetter);
 
-                    if (lettersOnly && text.Length > 1)
+                    if (lettersOnly)
                     {
-                        for (int k = 0; k < text.Length; k++)
+                        int k = 0;
+                        while (k < text.Length)
                         {
-                            tokens.Add(new Token(TokenType.Identifier, text[k].ToString(), start + k));
+                            // Try match longest known name at this position
+                            string? best = null;
+
+                            foreach (var name in KnownNames)
+                            { 
+                                if (k + name.Length <= text.Length &&
+                                    string.Compare(text, k, name, 0, name.Length, ignoreCase: true) == 0)
+                                {
+                                    if (best == null || name.Length > best.Length)
+                                        best = name;
+                                }
+                            }
+
+                            if (best != null)
+                            {
+                                tokens.Add(new Token(TokenType.Identifier, text.Substring(k, best.Length), runStart + k));
+                                k += best.Length;
+                            }
+                            else
+                            { 
+                                tokens.Add(new Token(TokenType.Identifier, text[k].ToString(), runStart + k));
+                                k++;
+                            }
                         }
+
                         continue;
                     }
 
