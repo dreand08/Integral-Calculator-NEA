@@ -44,47 +44,6 @@ namespace Computer_Science_NEA.FunctionHandling.SymbolicMath
             // x^1 => x
             if (IsOne(e)) return b;
 
-            // Double-angle trig rewrites 
-            // sin(u)^2 = 0.5 * (1 - cos(2u))
-            // cos(u)^2 = 0.5 * (1 + cos(2u))
-            if (e is NumberExpression powN && powN.Value == 2m)
-            {
-                // Build 2u
-                Expression TwoU(Expression u) =>
-                    MultiplyExpression.Make(new NumberExpression(2m), u).Simplify();
-
-                if (b is SinExpression sin)
-                {
-                    var twoU = TwoU(sin.Inner);
-                    var cos2u = CosExpression.Make(twoU);
-
-                    // 0.5 * (1 + (-1 * cos(2u)))
-                    return MultiplyExpression.Make(
-                        new NumberExpression(0.5m),
-                        AddExpression.Make(
-                            new NumberExpression(1m),
-                            MultiplyExpression.Make(new NumberExpression(-1m), cos2u)
-                        )
-                    ).Simplify();
-                }
-
-                if (b is CosExpression cos)
-                {
-                    var twoU = TwoU(cos.Inner);
-                    var cos2u = CosExpression.Make(twoU);
-
-                    // 0.5 * (1 + cos(2u))
-                    return MultiplyExpression.Make(
-                        new NumberExpression(0.5m),
-                        AddExpression.Make(
-                            new NumberExpression(1m),
-                            cos2u
-                        )
-                    ).Simplify();
-                }
-            }
-
-
             // 0^x => 0 (ignoring edge cases like 0^0)
             if (IsZero(b)) return new NumberExpression(0m);
 
@@ -191,6 +150,40 @@ namespace Computer_Science_NEA.FunctionHandling.SymbolicMath
                 if (aNum.Value == 1m) return new VariableExpression(variable);
 
                 return MultiplyExpression.Make(this, PowerExpression.Make(LnExpression.Make(aNum), new NumberExpression(-1m))).Simplify();
+            }
+
+            // Fallback: use trig square identities for sin(u)^2 and cos(u)^2
+            if (Exponent is NumberExpression en && en.Value == 2m &&
+                (BaseExpr is SinExpression || BaseExpr is CosExpression))
+            {
+                // Reuse the identity by building the rewritten expression here
+                Expression TwoU(Expression u) =>
+                    MultiplyExpression.Make(new NumberExpression(2m), u).Simplify();
+
+                if (BaseExpr is SinExpression sin)
+                {
+                    var cos2u = CosExpression.Make(TwoU(sin.Inner));
+                    var rewritten = MultiplyExpression.Make(
+                        new NumberExpression(0.5m),
+                        AddExpression.Make(
+                            new NumberExpression(1m),
+                            MultiplyExpression.Make(new NumberExpression(-1m), cos2u)
+                        )
+                    ).Simplify();
+
+                    return rewritten.Integrate(variable).Simplify();
+                }
+
+                if (BaseExpr is CosExpression cos)
+                {
+                    var cos2u = CosExpression.Make(TwoU(cos.Inner));
+                    var rewritten = MultiplyExpression.Make(
+                        new NumberExpression(0.5m),
+                        AddExpression.Make(new NumberExpression(1m), cos2u)
+                    ).Simplify();
+
+                    return rewritten.Integrate(variable).Simplify();
+                }
             }
 
             throw new NotSupportedException("Integrate: power form not supported yet.");

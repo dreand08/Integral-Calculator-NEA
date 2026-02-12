@@ -360,7 +360,7 @@ namespace Computer_Science_NEA.FunctionHandling.SymbolicMath
                 return false;
             }
 
-            //Rule 1: u' * u^-1  => ln(u)
+            //Rule 1a: u' * u^-1  => ln(u)
             for (int i = 0; i < factors.Count; i++)
             {
                 if (factors[i] is PowerExpression p && p.Exponent is NumberExpression ne && ne.Value == -1m)
@@ -385,6 +385,48 @@ namespace Computer_Science_NEA.FunctionHandling.SymbolicMath
                     factors.Insert(i, p);
                 }
             }
+
+            // Rule 1b: u' * u^n  => u^(n+1)/(n+1)   (n numeric, n != -1)
+            for (int i = 0; i < factors.Count; i++)
+            {
+                if (factors[i] is PowerExpression p &&
+                    p.Exponent is NumberExpression ne &&
+                    ne.Value != -1m)
+                {
+                    var u = p.BaseExpr;
+                    var du = u.Differentiate(variable).Simplify();
+                    SplitDu(du, out var duConst, out var duRest);
+
+                    // Remove u^n
+                    factors.RemoveAt(i);
+
+                    // Try remove something proportional to duRest
+                    if (TryRemoveConstMultipleOf(duRest, out var k))
+                    {
+                        if (factors.Count == 0)
+                        {
+                            var nVal = ne.Value;
+                            var newExp = nVal + 1m;
+
+                            if (newExp != 0m)
+                            {
+                                // multiplier = constProduct * k/duConst * 1/(n+1)
+                                var multiplier = (constProduct * k) / duConst * (1m / newExp);
+
+                                return MultiplyExpression.Make(
+                                    new NumberExpression(multiplier),
+                                    PowerExpression.Make(u, new NumberExpression(newExp))
+                                ).Simplify();
+                            }
+                            // newExp == 0 would be ln case, handled by Rule 1 already
+                        }
+                    }
+
+                    // Put back if not matched
+                    factors.Insert(i, p);
+                }
+            }
+
 
             // Rule 2: exp(u) * u' => exp(u) (constant multiple allowed on u')
             for (int i = 0; i < factors.Count; i++)
