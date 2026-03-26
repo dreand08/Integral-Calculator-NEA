@@ -7,7 +7,7 @@ using Computer_Science_NEA.FunctionHandling;
 
 namespace Computer_Science_NEA.Integration
 {
-    class IntegrationErrorEstimator 
+    public class IntegrationErrorEstimator 
     {
         //The purpose of this class is to find the % error of definite integration without having the true value.
         //This is done using absolute error formulas which involve differentiation.
